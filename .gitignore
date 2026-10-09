@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Downloaded data (auto-fetched at runtime)
+test_images/
+_lol_tmp/
+
+# Local HuggingFace cache
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
