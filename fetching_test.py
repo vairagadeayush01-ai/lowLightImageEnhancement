@@ -50,9 +50,13 @@ def fetch_test_images():
     low_dirs  = [Path(p) for p in glob.glob(str(extract_root / "**" / "low"),  recursive=True)]
     high_dirs = [Path(p) for p in glob.glob(str(extract_root / "**" / "high"), recursive=True)]
 
-    # Prefer dirs that live inside an "eval" / "test" parent
+    # Prefer dirs that live inside an "eval" / "test" / "val" parent
+    # Use substring match so "eval15" correctly matches "eval"
     def pick(dirs):
-        test_dirs = [d for d in dirs if any(k in d.parts for k in ("eval", "test", "val"))]
+        test_dirs = [
+            d for d in dirs
+            if any(kw in part.lower() for part in d.parts for kw in ("eval", "test", "val"))
+        ]
         return test_dirs[0] if test_dirs else (dirs[0] if dirs else None)
 
     src_low  = pick(low_dirs)
@@ -64,19 +68,27 @@ def fetch_test_images():
             f"Extracted to: {extract_root}"
         )
 
+    print(f"[>>] Using low  folder: {src_low}")
+    print(f"[>>] Using high folder: {src_high}")
+
     LOW_DIR.mkdir(parents=True, exist_ok=True)
     HIGH_DIR.mkdir(parents=True, exist_ok=True)
 
     image_exts = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
+    MAX_IMAGES = 20   # safety cap — eval15 has exactly 15
+
     copied = 0
     for f in sorted(src_low.iterdir()):
-        if f.suffix.lower() in image_exts:
+        if f.suffix.lower() in image_exts and copied < MAX_IMAGES:
             shutil.copy2(f, LOW_DIR / f.name)
             copied += 1
 
     for f in sorted(src_high.iterdir()):
         if f.suffix.lower() in image_exts:
-            shutil.copy2(f, HIGH_DIR / f.name)
+            high_dest = HIGH_DIR / f.name
+            # Only copy if matching low image exists
+            if (LOW_DIR / f.name).exists():
+                shutil.copy2(f, high_dest)
 
     print(f"[OK] Saved {copied} test image(s) to '{TEST_DIR}/'")
 
